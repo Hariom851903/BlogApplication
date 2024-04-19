@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const corse = require("cors");
 const express= require("express");
+const asyncHandler=require('express-async-handler');
 const connectDB= require('./utils/connectDB');
 const Post=require("./models/Post");
 connectDB();
@@ -20,22 +21,26 @@ const corsOptions = {
 };
 app.use(corse(corsOptions));
 // ! Create post
-app.post("/api/v1/posts/create", async (req, res) => {
-  try {
-    //get the payload
-    const {postData} = req.body;
-    console.log(req.body);
-    const postCreated = await Post.create(postData);
-    res.json({
-      status: "success",
-      message: "Post created successfully",
-      postCreated,
-    });
-  } catch (error) {
-    console.log(error);
-    res.json(error);
-  }
+app.use((error, req, res, next) => {
+    console.error(error); // Logging the error
+    return res.status(500).json({ message: 'Internal Server Error' });
 });
+
+// Route to create a new post
+app.post("/api/v1/posts/create", asyncHandler(async (req, res) => {
+    // Get the payload
+    const { postData } = req.body;
+    
+    // Create a new post
+    const postCreated = await Post.create(postData);
+    
+    // Respond with success message
+    res.json({
+        status: "success",
+        message: "Post created successfully",
+        postCreated,
+    });
+}));
 // ! List posts
 app.get("/api/v1/posts", async (req, res) => {
   try {
@@ -49,11 +54,13 @@ app.get("/api/v1/posts", async (req, res) => {
     res.json(error);
   }
 });
+
 // ! update post
 app.put("/api/v1/posts/:postId", async (req, res) => {
   try {
     //get the post id from params
     const postId = req.params.postId;
+      console.log("dhvbcjm");
     //find the post
     const postFound = await Post.findById(postId);
     if (!postFound) {
@@ -67,7 +74,7 @@ app.put("/api/v1/posts/:postId", async (req, res) => {
         new: true,
       }
     );
-    res.json({
+     return res.json({
       status: "Post updated successfully",
       postUpdted,
     });
@@ -94,6 +101,7 @@ app.get("/api/v1/posts/:postId", async (req, res) => {
 // ! delete post
 app.delete("/api/v1/posts/:postId", async (req, res) => {
   try {
+    console.log("delete");
     //get the post id from params
     const postId = req.params.postId;
     //find the post
